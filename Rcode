@@ -1,47 +1,3 @@
----
-title: "PROJECT REPORT BUAN 6357"
-author: "Sushama Rangarajan"
-output: pdf_document
-fontsize : 11pt
-urlcolor : blue
----
-
-# Executive Summary
-
-Airbnb is a vacation rental platform formed in the year 2008. Its business model is to build trust with unknown people, inviting guests to stay in their (hosts') listings. 
-It has its presence in over 220 countries with more than 7 Million listings. The price of each listing is determined by the host.
-This project uncovers the price prediction model for Airbnb New York using various features. That dataset was downloaded from Airbnb website and the analysis is limited to 2019 listing database dated Jan 3rd 2020. Few machine learning models and sentiment analysis were implemented on the dataset. In conclusion, features such as room type, property type, negative reviews, amenities, area, superhost status and instant booking feature play a role in impacting the price of a listing. 
-
-
-# 1. Introduction 
-
-The analysis was aimed at understanding the effects of different features on price. Features include the ones available as a part of listing as well as ones extracted from the reviews. 
-Regression based analysis was preferred and implemented. The analysis has 2 parts :
-
-* Overall listing analysis that helps understand the overall effect of features on price across New York. 
-
-* Queens neighborhood analysis that includes review sentiment classification along with other features in the prediction model. 
-
-This would benefit : 
-
-i. New hosts to understand how to price their listings in the near future and what to look for
-
-ii. Customers to make rational choices to stay 
-
-iii. Airbnb to understand more about their listings and customer reviews
-
-
-
-# 2. Data description
-
-There are 3 datasets used for analysis. 
-
-  1. Overall listings dataset that contained details regarding individual listings in New York along along with their average price per night, number of beds, baths, property type, superhost status, neighbourhood etc. spanning 51361 observations across 106 features
-
-  2. Review dataset that had individual customer reviews for each of the listings
-
-  3. Calendar dataset that consisted of pricing details and 1 year availability for each of the listings
-
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 pacman::p_load(tidytext,qdap, lubridate,dplyr,textdata, textcat,cld2,sentimentr,tm, tokenizers,  quanteda , ggthemes,SnowballC,cld3,lexicon, fpp3, GGally, gridExtra,rJava,mallet, topicmodels, tidyr,stringr, ggplot2, wordcloud,rjson,rgdal,sqldf, caret,e1071,corrplot, xgboost,gbm, vtreat,lubridate, reshape2,data.table, neuralnet, GGally,pROC,lime, furrr, parallel, mltools, randomForest, ranger, lm.beta)
@@ -250,27 +206,7 @@ bnb_amn <- bnb_amn[,-c(5,8,29,20,21,25)]
 bnb_amn[,c(35:54, 56:57)] <- lapply(bnb_amn[,c(35:54, 56:57)],factor)
 
 ```
-
-# 3. Data Pre-Processing
-
-The listings dataset consisted of numerical fields, categorical fields, date and text fields.
-
-  Categorical fields that had only one factor in the entire dataset were dropped due to no variance. Numerical fields that had less than 0.2% of NAs were dropped. Fields like cleaning fee, security deposit NAs were replaced with 0, since those listings were not charging such fees. 
-
-  Price fields like average price per night, security deposit and cleaning fee were right skewed and thus log
-transformation was applied to it. 
-
-  Aside, there were 220+ categories of neighborhood locations and 30+ categories of property types. These were     grouped by top-n categories and the remaining were categorized as "Others".
- 
-  Of the overall 70+ amenities offered across listings, top 20 amenities and their presence in each of the listings were considered as factor variables in the model. 
- 
-  The reviews dataset consisted of customer reviews in multiple languages. English language ones were filtered for analysis. Also, automated cancellation message that said "This is an automated posting" were filtered and their count was added to the model to understand if these affected the price. 
-
-
-# 4. Exploratory Data Analysis
-
-Average price per night across different areas and days are shown below. 
-We can see that Manhattan is always charging a higher price followed by Brooklyn and the others. Fridays and Saturdays are generally higher priced than on weekdays across months. 
+# Exploratory Analysis
 
 
 ```{r   message=FALSE, warning=FALSE, include=FALSE}
@@ -292,25 +228,13 @@ neigh_weekday <- cal1 %>% group_by(neighbourhood.group.cleansed, month,Day) %>% 
 ggplot(mapping = aes(x=month, y= avgprice, colour = Day),data = neigh_weekday) + geom_line() +
   facet_wrap(~ neighbourhood.group.cleansed, scales = "free_y") + 
   labs(x = "Month", y = "Average Price", colour = "Day")
-```
-
-\newpage 
-
-Top 50 Amenities across listings in the New York is shown below.
-Wi-fi, Heating, Kitchen, Smoke Detector, Essentials are the most common ones followed by Air Conditioning, Hangers, Iron, Hair dyers, TV etc. 
+``
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, out.width= "50%", out.height="50%"}
 wordcloud(words = tot_amn$V1, freq = tot_amn$n, min.freq = 500, max.words = 50, random.order = FALSE,
           scale=c(2,0.7),colors=brewer.pal(8, "Dark2"),rot.per = 0.2)
 ```
-
-
-
-
-On observing the price variation with respect to cancellation policy across months, the listings that has strict policy with 14 day grace period show great fluctuation through out the year. Listings that have Moderate and Flexible cancellation policy listings are, on an average, the lowest priced.  
-
-
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, out.width= "80%", out.height="60%"}
 cancel_price <- cal1 %>% group_by(cancellation.policy,month) %>% summarise(avgprice = mean(adjusted_price))
@@ -320,7 +244,7 @@ ggplot(mapping = aes(x=month, y= avgprice,colour = cancellation.policy),data = c
 
 
 
-# 5. Analysis
+# Analysis
 
 ## A. Predicting prices using different features for the entire listings 
 
@@ -361,31 +285,6 @@ paste0("The Prediction(test) Mean Squared Error is = " , signif(mean(lmt.ac_pr$s
 ```
 
 
-Here, the error rate is measured using "Mean Squared Error", herein referred to as MSE. 
-
-The features that has a positive impact on price are : 
-
-* Prices additionally charged : Cleaning fee, Security fee
-* Amenities like Hair Dryer, Fire Extinguisher, Dryer, Air Conditioner, TV, Carbon Monoxide detector
-* Stay type : Few Days
-* Property Type : Condominium, Service apt, Loft 
-* Instant bookable, 90/365 day availability, Super Host
-Host years with Airbnb, Entire home/ apt, Presence of neighbourhood description in the listing
-among other usual variables like accommodates, bedrooms and bathrooms. 
-
-It is also clearly inferred that price among neighborhood groups are in the order :
-Manhattan > Brooklyn > Queens > Bronx > Staten Island 
-
-The features that has a negative impact on price are : 
-
-* Auto cancellation 
-* Stay for few weeks/months, 
-* Most commonly offered amenities like Wi-Fi, Kitchen, Essentials, Heating
-* Cancellation policy
-* Hotel rooms and Apartment property types
-* Minimum nights required to stay
-
-
 ## B. Predicting the prices of Queens Neighborhood
 
 This analysis was carried out to understand if the negative reviews had an impact on pricing.  
@@ -421,9 +320,6 @@ ggplot(queen_polarity$all, aes(x = polarity, y = ..density..)) +
   geom_density(size = 0.75) +
   theme_gdocs() 
 ```
-
-
-We can see from the graph that there are more number of positive reviews than negative reviews in the Queens neighborhood indicating that listings in Queens are performing better. 
 
 ```{r   message=FALSE, warning=FALSE, include=FALSE}
 rev2$polarity <- queen_polarity$all$polarity
@@ -469,14 +365,6 @@ comparison.cloud(
 
 ```
 
-
-We can infer that negative reviews are mostly concentrated about :
-
-1. Cleanliness of the property - insects, stained, clogged, mouse, cockroach, unclean, gross, awful, blocked
-2. Host behavior - yelling, screaming, cancel, beware, upset, refused, warning, disappointing
-
-These number of positive and negative reviews in each listings were included in the model and 3 machine learning models were executed.   
-
 ```{r   message=FALSE, warning=FALSE, include=FALSE}
 queens <- rev2 %>% group_by(id) %>% summarise(polarityscore = sum(polarity))
 rev1 <- rev1 %>% left_join(queens, by = c("id" = "id"))
@@ -489,10 +377,7 @@ bnb_queens <- bnb_queens %>% left_join(queen_pol, by = c("id" = "listing_id"))
 bnb_queens[is.na(bnb_queens)] <- 0
 ```
 
-\newpage
 ## 1. Linear Regression 
-
-The output of this regression is included in Appendix II
 
 ```{r   include=FALSE}
 #Queens regression
@@ -522,8 +407,6 @@ lmerr <- lmerr %>% mutate(sqerror = error * error)
 paste0("The R-squared using Linear Regression is = " , signif(summary(qlin)$r.squared,4))
 paste0("The Prediction(test) MSE using Linear Regression is = " , signif(mean(lmerr$sqerror),4))
 ```
-
-We can infer from the analysis that negative reviews do influence price decrease. 
 
 ## 2. Gradient Boosting Machines (GBM)
 
@@ -577,12 +460,6 @@ plot_features(explanation)
 
 ```
 
-The above graphs show the feature importance for two random listings. 
-We can observe the price increase or decrease with variation in the top 10 features. These features by themselves are also able to explain 57% and 53% of variation in the prices respectively. 
-We can also see that auto cancellation have a negative influence on price. 
-
-For more detailed feature importance extracted with GBM, please refer Appendix III
-
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 #GBM prediction
 testgbm <- predict(gbm.fit, qtestx)
@@ -593,7 +470,6 @@ paste0("The prediction MSE using GBM is ", signif(mean(gbmerr$sqerror),4))
 
 ```
 
-\newpage
 ## 3. Random Forest
 
 The random forest specification after tuning the model is shown below : 
@@ -692,57 +568,10 @@ colnames(ovr) <- c("Linear Model", "Gradient Boost", "Random Forest")
 ovr
 ```
 
-Gradient Boosting Machines and Random Forest gives low prediction MSE and is thus a better model here. 
 
-# 6. Conclusion
-
-From the above analysis, the following are the conclusions drawn :
-
-1. Prices are high during Nov-Dec - Thanksgiving and Christmas holidays.
-2. It is cheaper to rent listings on weekday than on a weekend.
-3. Features such as super host, amenities, neighborhood, property types, negative reviews, room type, listing availability, extra fees and others are observed to have an impact on price. 
-4. Super hosts command a higher price than the usual host.
-5. Good host behavior and listing cleanliness is important to avoid negative reviews.
-
-Future hosts can consider offering at least few of the top 20 amenities, enable instant booking feature, respond quicker to guests' requests etc. to stand out from the other listings in New York area. This will also aid in increasing their average price per night. 
-
-
-# 7. Sources
+# Sources
 
 * Datasets downloaded from http://insideairbnb.com/get-the-data.html
 * Sentiment Analysis in R from https://learn.datacamp.com/courses/sentiment-analysis-in-r 
 
-
-\newpage
-## Detailed output Appendix for reference 
-
-### Appendix I
-
-Regression output 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-summary(lm_trn)
-```
-
-
-### Appendix II
-
-Queens - Regression output
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-summary(qlin)
-```
-
-\newpage
-### Appendix III
-
-Queens - GBM output for relative influence 
-```{r echo=FALSE, message=FALSE, warning=FALSE, out.height="60%", out.width="60%",fig.width=8}
-par(mar=c(2,10,5,5))
-summary(
-  gbm.fit, 
-  cBars = 10,
-  method = relative.influence,
-  las = 2,
-  )
-
-```
 
