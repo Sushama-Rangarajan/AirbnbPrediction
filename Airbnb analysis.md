@@ -1,7 +1,7 @@
 ---
 title: "Airbnb Analysis"
 author: "Sushama Rangarajan"
-output: pdf_document
+output: github_document
 fontsize : 11pt
 urlcolor : blue
 ---
